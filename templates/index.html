@@ -1,0 +1,51 @@
+{% extends "layout.html" %}
+
+{% block content %}
+<div class="container-fluid vh-100 d-flex flex-column p-0">
+    <!-- Navbar -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-secondary bg-opacity-25 px-3">
+        <a class="navbar-brand" href="#">CTF Ops Center</a>
+        <div class="ms-auto">
+            <span class="badge bg-success" id="connection-status">Connected</span>
+        </div>
+    </nav>
+
+    <div class="row g-0 flex-grow-1">
+        <!-- Sidebar -->
+        <div class="col-md-2 bg-black border-end border-secondary p-3">
+            <h5 class="text-secondary text-uppercase fs-6">Quick Actions</h5>
+            <div class="d-grid gap-2 mb-4">
+                <button class="btn btn-sm btn-outline-warning text-start" id="btn-webdav">
+                    <i class="bi bi-folder"></i> Toggle WebDAV
+                </button>
+                <button class="btn btn-sm btn-outline-info text-start" id="btn-vpn">
+                    <i class="bi bi-shield-lock"></i> Connect VPN
+                </button>
+            </div>
+
+            <h5 class="text-secondary text-uppercase fs-6">Target</h5>
+            <div class="input-group mb-3">
+                <input type="text" class="form-control form-control-sm bg-dark text-light border-secondary" placeholder="IP Address" id="target-ip">
+                <button class="btn btn-sm btn-danger" type="button" id="btn-nmap">Scan</button>
+            </div>
+
+            <hr class="border-secondary">
+
+            <h5 class="text-secondary text-uppercase fs-6">Active Terminals</h5>
+            <div class="list-group list-group-flush" id="session-list">
+                <!-- Tabs injected here -->
+            </div>
+            <button class="btn btn-sm btn-success mt-2 w-100" id="btn-new-term">+ New Terminal</button>
+        </div>
+
+        <!-- Terminal Area -->
+        <div class="col-md-10 d-flex flex-column bg-dark position-relative" id="terminals-wrapper">
+            <!-- Terminals injected here -->
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/terminal.js') }}"></script>
+{% endblock %}
