@@ -3,80 +3,85 @@
 {% block content %}
 <div class="container-fluid vh-100 d-flex flex-column p-0">
     <!-- Navbar -->
-    <nav class="navbar navbar-expand-lg navbar-dark bg-secondary bg-opacity-25 px-3">
-        <a class="navbar-brand" href="#">CTF Ops Center</a>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-secondary bg-opacity-25 px-3" style="height: 50px; flex-shrink: 0;">
+        <a class="navbar-brand fs-6" href="#">CTF Ops Center</a>
         <div class="ms-auto">
             <span class="badge bg-success" id="connection-status">Connected</span>
         </div>
     </nav>
 
-    <div class="row g-0 flex-grow-1">
-        <!-- Sidebar -->
-        <div class="col-md-2 bg-black border-end border-secondary p-3">
+    <!-- Main Content Area (Flex Row) -->
+    <div class="d-flex flex-grow-1 overflow-hidden" id="main-split-pane">
+
+        <!-- Left Panel: Terminals (Flexible width) -->
+        <div id="left-panel" class="bg-dark position-relative d-flex flex-column">
+             <!-- Terminal Area -->
+            <div id="terminals-wrapper" class="flex-grow-1 w-100 position-relative">
+                <!-- Terminals injected here -->
+            </div>
+        </div>
+
+        <!-- Right Panel: Tools (Fixed/Resizable width) -->
+        <div id="right-panel" class="bg-black border-start border-secondary p-2 d-flex flex-column small-font">
+
+             <!-- Active Terminals List (Moved here as it's a control) -->
+             <h6 class="text-secondary text-uppercase fw-bold mb-2" style="font-size: 0.7rem;">Active Sessions</h6>
+             <div class="list-group list-group-flush mb-3 flex-shrink-0" id="session-list" style="max-height: 150px; overflow-y: auto;">
+                 <!-- Tabs injected here -->
+             </div>
+             <button class="btn btn-sm btn-success w-100 mb-3 py-0" id="btn-new-term" style="font-size: 0.75rem;">+ New Terminal</button>
+
+            <hr class="border-secondary my-2">
 
             <!-- Quick SSH -->
-            <h5 class="text-secondary text-uppercase fs-6">Quick SSH</h5>
-            <div class="input-group mb-3">
-                <input type="text" class="form-control form-control-sm bg-dark text-light border-secondary" placeholder="user@ip" id="ssh-target">
-                <button class="btn btn-sm btn-primary" id="btn-quick-ssh">Connect</button>
+            <h6 class="text-secondary text-uppercase fw-bold mb-2" style="font-size: 0.7rem;">Quick SSH</h6>
+            <div class="input-group input-group-sm mb-3">
+                <input type="text" class="form-control bg-dark text-light border-secondary" placeholder="user@ip" id="ssh-target" style="font-size: 0.75rem;">
+                <button class="btn btn-primary" id="btn-quick-ssh" style="font-size: 0.75rem;">Connect</button>
             </div>
 
-            <hr class="border-secondary">
-
             <!-- Tools -->
-            <h5 class="text-secondary text-uppercase fs-6">Tools</h5>
+            <h6 class="text-secondary text-uppercase fw-bold mb-2" style="font-size: 0.7rem;">Tools</h6>
 
             <!-- WebDAV -->
-            <div class="card bg-dark border-secondary mb-3">
-                <div class="card-header p-2 text-white small">WebDAV</div>
+            <div class="card bg-dark border-secondary mb-2">
+                <div class="card-header p-1 text-white" style="font-size: 0.75rem;">WebDAV</div>
                 <div class="card-body p-2">
                     <div class="input-group input-group-sm mb-2">
-                        <span class="input-group-text bg-secondary border-secondary text-light">Port</span>
-                        <input type="number" class="form-control bg-black text-light border-secondary" id="webdav-port" value="8080">
+                        <span class="input-group-text bg-secondary border-secondary text-light p-1" style="font-size: 0.7rem;">Port</span>
+                        <input type="number" class="form-control bg-black text-light border-secondary p-1" id="webdav-port" value="8080" style="font-size: 0.75rem;">
                     </div>
                     <div class="d-grid">
-                        <button class="btn btn-sm btn-outline-warning" id="btn-webdav-toggle">Start WebDAV</button>
+                        <button class="btn btn-sm btn-outline-warning py-0" id="btn-webdav-toggle" style="font-size: 0.75rem;">Start WebDAV</button>
                     </div>
-                    <div class="mt-2 small text-muted" id="webdav-status">
+                    <div class="mt-1 text-muted text-truncate" id="webdav-status" style="font-size: 0.65rem;">
                         Status: Stopped
                     </div>
                 </div>
             </div>
 
             <!-- VPN -->
-            <div class="card bg-dark border-secondary mb-3">
-                <div class="card-header p-2 text-white small">VPN</div>
+            <div class="card bg-dark border-secondary mb-2">
+                <div class="card-header p-1 text-white" style="font-size: 0.75rem;">VPN</div>
                 <div class="card-body p-2">
-                    <select class="form-select form-select-sm bg-black text-light border-secondary mb-2" id="vpn-config-select">
+                    <select class="form-select form-select-sm bg-black text-light border-secondary mb-2 py-0" id="vpn-config-select" style="font-size: 0.75rem;">
                         <option value="">Select Config...</option>
                     </select>
                     <div class="d-grid">
-                        <button class="btn btn-sm btn-outline-info" id="btn-vpn-connect">Connect VPN</button>
+                        <button class="btn btn-sm btn-outline-info py-0" id="btn-vpn-connect" style="font-size: 0.75rem;">Connect VPN</button>
                     </div>
                 </div>
             </div>
 
             <!-- Target / Nmap -->
-            <h5 class="text-secondary text-uppercase fs-6">Target Scan</h5>
-            <div class="mb-3">
-                <input type="text" class="form-control form-control-sm bg-dark text-light border-secondary mb-2" placeholder="Nmap Command" id="nmap-command" value="nmap -sC -sV ">
+            <h6 class="text-secondary text-uppercase fw-bold mb-2" style="font-size: 0.7rem;">Target Scan</h6>
+            <div class="mb-2">
+                <input type="text" class="form-control form-control-sm bg-dark text-light border-secondary mb-2" placeholder="Nmap Command" id="nmap-command" value="nmap -sC -sV " style="font-size: 0.75rem;">
                 <div class="d-grid">
-                    <button class="btn btn-sm btn-danger" type="button" id="btn-nmap-run">Run Scan</button>
+                    <button class="btn btn-sm btn-danger py-0" type="button" id="btn-nmap-run" style="font-size: 0.75rem;">Run Scan</button>
                 </div>
             </div>
 
-            <hr class="border-secondary">
-
-            <h5 class="text-secondary text-uppercase fs-6">Active Terminals</h5>
-            <div class="list-group list-group-flush" id="session-list">
-                <!-- Tabs injected here -->
-            </div>
-            <button class="btn btn-sm btn-success mt-2 w-100" id="btn-new-term">+ New Terminal</button>
-        </div>
-
-        <!-- Terminal Area -->
-        <div class="col-md-10 d-flex flex-column bg-dark position-relative" id="terminals-wrapper">
-            <!-- Terminals injected here -->
         </div>
     </div>
 </div>

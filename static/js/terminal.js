@@ -286,4 +286,25 @@ document.addEventListener('DOMContentLoaded', () => {
             createTerminal(null, cmd);
         }
     });
+
+    // --- Split.js Initialization ---
+    Split(['#left-panel', '#right-panel'], {
+        sizes: [75, 25],
+        minSize: [200, 200],
+        gutterSize: 5,
+        cursor: 'col-resize',
+        onDragEnd: () => {
+            if (activeTermId && terminals[activeTermId]) {
+                terminals[activeTermId].fit.fit();
+                const t = terminals[activeTermId];
+                socket.emit('resize', { term_id: activeTermId, cols: t.term.cols, rows: t.term.rows });
+            }
+        },
+        // Also fit during drag for smoother experience, maybe throttled?
+        onDrag: () => {
+             if (activeTermId && terminals[activeTermId]) {
+                terminals[activeTermId].fit.fit();
+            }
+        }
+    });
 });
