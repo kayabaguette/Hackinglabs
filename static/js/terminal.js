@@ -128,6 +128,21 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     // --- Helpers ---
+    function checkVpnStatus() {
+        fetch('/api/tools/vpn/status')
+            .then(r => r.json())
+            .then(data => {
+                const badge = document.getElementById('vpn-status-badge');
+                if (data.running) {
+                    badge.className = 'badge bg-success me-2';
+                    badge.innerText = 'VPN: Connected';
+                } else {
+                    badge.className = 'badge bg-secondary me-2';
+                    badge.innerText = 'VPN: Disconnected';
+                }
+            });
+    }
+
     function updateWebDAVUI(statusData) {
         const btn = document.getElementById('btn-webdav-toggle');
         const statusDiv = document.getElementById('webdav-status');
@@ -365,7 +380,7 @@ document.addEventListener('DOMContentLoaded', () => {
             .then(r => r.json())
             .then(data => {
                 const sel = document.getElementById('vpn-config-select');
-                sel.innerHTML = '<option value="">Select Config...</option>';
+                sel.innerHTML = '<option value="">Select VPN...</option>';
                 data.configs.forEach(c => {
                     const opt = document.createElement('option');
                     opt.value = c;
@@ -373,6 +388,10 @@ document.addEventListener('DOMContentLoaded', () => {
                     sel.appendChild(opt);
                 });
             });
+
+        // Check VPN Status periodically
+        setInterval(checkVpnStatus, 5000);
+        checkVpnStatus();
     });
 
     socket.on('output', data => {
@@ -513,7 +532,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // --- Split.js Initialization ---
     // Horizontal Split: Left Sidebar | Center | Right Tools
     Split(['#left-sidebar', '#center-panel', '#right-panel'], {
-        sizes: [15, 65, 20],
+        sizes: [15, 75, 10], // Minimize Right Panel
         minSize: [150, 400, 200],
         gutterSize: 5,
         cursor: 'col-resize',

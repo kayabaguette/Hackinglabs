@@ -1,4 +1,5 @@
 import threading
+import subprocess
 from wsgidav.wsgidav_app import WsgiDAVApp
 from cheroot import wsgi
 import os
@@ -72,5 +73,14 @@ class ToolManager:
     def list_vpn_configs(self):
         # List all .ovpn files in current directory
         return [f for f in glob.glob("*.ovpn")]
+
+    def get_vpn_status(self):
+        # Check if openvpn process is running
+        try:
+            # pgrep returns 0 if process found, 1 if not
+            ret = subprocess.call(["pgrep", "openvpn"], stdout=subprocess.DEVNULL)
+            return ret == 0
+        except Exception:
+            return False
 
 tool_manager = ToolManager()

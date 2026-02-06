@@ -14,8 +14,15 @@
             <button class="btn btn-sm btn-outline-light ms-2" id="btn-create-workspace">+</button>
         </div>
 
-        <div class="ms-auto">
-            <span class="badge bg-success" id="connection-status">Connected</span>
+        <div class="ms-auto d-flex align-items-center">
+            <!-- VPN Selector & Status -->
+            <select class="form-select form-select-sm bg-black text-light border-secondary me-2" id="vpn-config-select" style="width: 150px;">
+                <option value="">Select VPN...</option>
+            </select>
+            <button class="btn btn-sm btn-info me-3" id="btn-vpn-connect" title="Connect VPN"><i class="bi bi-play-fill"></i></button>
+
+            <span class="badge bg-secondary me-2" id="vpn-status-badge">VPN: Disconnected</span>
+            <span class="badge bg-dark border border-secondary text-secondary p-1" id="socket-status" style="font-size: 0.5rem;" title="Socket Status">●</span>
         </div>
     </nav>
 
@@ -90,23 +97,10 @@
                         <input type="number" class="form-control bg-black text-light border-secondary p-1" id="webdav-port" value="8080" style="font-size: 0.75rem;">
                     </div>
                     <div class="d-grid">
-                        <button class="btn btn-sm btn-outline-warning py-0" id="btn-webdav-toggle" style="font-size: 0.75rem;">Start WebDAV</button>
+                                <button class="btn btn-sm btn-warning py-0" id="btn-webdav-toggle" style="font-size: 0.75rem;">Start WebDAV</button>
                     </div>
                     <div class="mt-1 text-muted text-truncate" id="webdav-status" style="font-size: 0.65rem;">
                         Status: Stopped
-                    </div>
-                </div>
-            </div>
-
-            <!-- VPN -->
-            <div class="card bg-dark border-secondary mb-2">
-                <div class="card-header p-1 text-white" style="font-size: 0.75rem;">VPN</div>
-                <div class="card-body p-2">
-                    <select class="form-select form-select-sm bg-black text-light border-secondary mb-2 py-0" id="vpn-config-select" style="font-size: 0.75rem;">
-                        <option value="">Select Config...</option>
-                    </select>
-                    <div class="d-grid">
-                        <button class="btn btn-sm btn-outline-info py-0" id="btn-vpn-connect" style="font-size: 0.75rem;">Connect VPN</button>
                     </div>
                 </div>
             </div>
@@ -117,7 +111,7 @@
                 <input type="text" class="form-control form-control-sm bg-dark text-light border-secondary mb-2" placeholder="Nmap Command" id="nmap-command" value="nmap -sC -sV " style="font-size: 0.75rem;">
                 <div class="d-grid gap-2">
                     <button class="btn btn-sm btn-danger py-0" type="button" id="btn-nmap-run" style="font-size: 0.75rem;">Run Scan</button>
-                    <button class="btn btn-sm btn-outline-light py-0" type="button" id="btn-nmap-save" style="font-size: 0.75rem;">Save Output</button>
+                    <button class="btn btn-sm btn-light py-0" type="button" id="btn-nmap-save" style="font-size: 0.75rem;">Save Output</button>
                 </div>
             </div>
 
@@ -130,7 +124,7 @@
                                 <input type="number" class="form-control bg-black text-light border-secondary p-1" id="nc-port" value="4444" style="font-size: 0.75rem;">
                             </div>
                             <div class="d-grid">
-                                <button class="btn btn-sm btn-outline-warning py-0" id="btn-nc-listen" style="font-size: 0.75rem;">Start Listener (nc -lvnp)</button>
+                                <button class="btn btn-sm btn-warning py-0" id="btn-nc-listen" style="font-size: 0.75rem;">Start Listener (nc -lvnp)</button>
                             </div>
                         </div>
                     </div>
@@ -140,8 +134,8 @@
                     <div class="card bg-dark border-secondary mb-2">
                         <div class="card-body p-2">
                             <div class="d-grid gap-2">
-                                <button class="btn btn-sm btn-outline-info py-0" id="btn-ligolo-proxy" style="font-size: 0.75rem;">Start Proxy (Sudo)</button>
-                                <button class="btn btn-sm btn-outline-light py-0" id="btn-ligolo-agent" style="font-size: 0.75rem;">Connect Agent</button>
+                                <button class="btn btn-sm btn-info py-0" id="btn-ligolo-proxy" style="font-size: 0.75rem;">Start Proxy (Sudo)</button>
+                                <button class="btn btn-sm btn-light py-0" id="btn-ligolo-agent" style="font-size: 0.75rem;">Connect Agent</button>
                             </div>
                         </div>
                     </div>

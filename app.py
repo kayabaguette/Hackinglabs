@@ -44,6 +44,11 @@ def get_webdav_status():
 def list_vpn_configs():
     return jsonify({'configs': tool_manager.list_vpn_configs()})
 
+@app.route('/api/tools/vpn/status', methods=['GET'])
+def get_vpn_status():
+    running = tool_manager.get_vpn_status()
+    return jsonify({'running': running})
+
 # --- Workspace & Notes API ---
 @app.route('/api/workspaces', methods=['GET'])
 def get_workspaces():
