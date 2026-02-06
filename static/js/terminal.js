@@ -432,8 +432,9 @@ document.addEventListener('DOMContentLoaded', () => {
         const cmd = document.getElementById('nmap-command').value;
         if(cmd && activeTermId && terminals[activeTermId]) {
              terminals[activeTermId].term.write(`\r\n\x1b[32m[System] Running: ${cmd}\x1b[0m\r\n`);
-             // Pipe to tee for saving
-             const fullCmd = `${cmd} | tee /tmp/nmap_scan.txt\n`;
+             // Pipe to tee for saving with unique ID based on terminal
+             const outFile = `/tmp/nmap_scan_${activeTermId}.txt`;
+             const fullCmd = `${cmd} | tee ${outFile}\n`;
              socket.emit('input', { term_id: activeTermId, input: fullCmd });
         }
     });
@@ -443,10 +444,17 @@ document.addEventListener('DOMContentLoaded', () => {
              alert("Select a workspace first");
              return;
         }
+        if (!activeTermId) {
+            alert("No active terminal selected");
+            return;
+        }
         fetch('/api/tools/nmap/save', {
             method: 'POST',
             headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({workspace_id: currentWorkspaceId})
+            body: JSON.stringify({
+                workspace_id: currentWorkspaceId,
+                term_id: activeTermId
+            })
         })
         .then(r => r.json())
         .then(data => {
@@ -469,9 +477,10 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     // --- Split.js Initialization ---
-    Split(['#left-panel', '#right-panel'], {
-        sizes: [75, 25],
-        minSize: [200, 200],
+    // Horizontal Split: Left Sidebar | Center | Right Tools
+    Split(['#left-sidebar', '#center-panel', '#right-panel'], {
+        sizes: [15, 65, 20],
+        minSize: [150, 400, 200],
         gutterSize: 5,
         cursor: 'col-resize',
         onDragEnd: () => {
@@ -481,8 +490,28 @@ document.addEventListener('DOMContentLoaded', () => {
                 socket.emit('resize', { term_id: activeTermId, cols: t.term.cols, rows: t.term.rows });
             }
         },
-        // Also fit during drag for smoother experience, maybe throttled?
         onDrag: () => {
+             if (activeTermId && terminals[activeTermId]) {
+                terminals[activeTermId].fit.fit();
+            }
+        }
+    });
+
+    // Vertical Split: Terminals | Notes
+    Split(['#terminals-wrapper', '#notes-wrapper'], {
+        direction: 'vertical',
+        sizes: [70, 30],
+        minSize: [100, 100],
+        gutterSize: 5,
+        cursor: 'row-resize',
+        onDragEnd: () => {
+             if (activeTermId && terminals[activeTermId]) {
+                terminals[activeTermId].fit.fit();
+                const t = terminals[activeTermId];
+                socket.emit('resize', { term_id: activeTermId, cols: t.term.cols, rows: t.term.rows });
+            }
+        },
+         onDrag: () => {
              if (activeTermId && terminals[activeTermId]) {
                 terminals[activeTermId].fit.fit();
             }

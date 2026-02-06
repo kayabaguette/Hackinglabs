@@ -114,17 +114,20 @@ def archive_terminal(term_id):
 def save_nmap_scan():
     data = request.get_json()
     workspace_id = data.get('workspace_id')
-    if not workspace_id:
-        return jsonify({'error': 'Workspace required'}), 400
+    term_id = data.get('term_id')
 
-    # Read from the temp file used by tee
+    if not workspace_id or not term_id:
+        return jsonify({'error': 'Workspace and Terminal ID required'}), 400
+
+    # Read from the unique temp file for this terminal
+    filename = f'/tmp/nmap_scan_{term_id}.txt'
     try:
-        with open('/tmp/nmap_scan.txt', 'r') as f:
+        with open(filename, 'r') as f:
             content = f.read()
     except:
-        return jsonify({'error': 'No scan result found'}), 404
+        return jsonify({'error': 'No scan result found for this terminal'}), 404
 
-    note = Note(workspace_id=workspace_id, title=f"Nmap Scan {datetime.datetime.now().strftime('%H:%M:%S')}", content=content)
+    note = Note(workspace_id=workspace_id, title=f"Scan Result {datetime.datetime.now().strftime('%H:%M:%S')}", content=content)
     db.session.add(note)
     db.session.commit()
     return jsonify({'status': 'saved', 'note_id': note.id})
