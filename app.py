@@ -9,6 +9,8 @@ from flask import Flask, render_template, request, jsonify
 from flask_socketio import SocketIO, emit, disconnect
 from utils.pty_handler import PTYManager
 from utils.tool_manager import tool_manager
+from utils.file_manager import FileManager
+from utils.http_server import SimpleHttpServer
 from models import db, Workspace, Note, TerminalLog
 import datetime
 
@@ -24,6 +26,8 @@ with app.app_context():
 
 socketio = SocketIO(app, async_mode='eventlet')
 pty_manager = PTYManager()
+file_manager = FileManager('shared')
+http_server = SimpleHttpServer('shared')
 
 @app.route('/')
 def index():
@@ -48,6 +52,50 @@ def list_vpn_configs():
 def get_vpn_status():
     running = tool_manager.get_vpn_status()
     return jsonify({'running': running})
+
+# --- File Manager & HTTP Server APIs ---
+@app.route('/api/files', methods=['GET'])
+def list_files():
+    return jsonify(file_manager.list_files())
+
+@app.route('/api/files', methods=['POST'])
+def upload_file():
+    if 'file' not in request.files:
+        return jsonify({'error': 'No file part'}), 400
+    file = request.files['file']
+    if file.filename == '':
+        return jsonify({'error': 'No selected file'}), 400
+    success, result = file_manager.save_file(file)
+    if success:
+        return jsonify({'status': 'uploaded', 'filename': result})
+    else:
+        return jsonify({'error': result}), 400
+
+@app.route('/api/files/<filename>', methods=['DELETE'])
+def delete_file(filename):
+    success, msg = file_manager.delete_file(filename)
+    if success:
+        return jsonify({'status': 'deleted'})
+    else:
+        return jsonify({'error': msg}), 400
+
+@app.route('/api/tools/http/toggle', methods=['POST'])
+def toggle_http():
+    data = request.get_json() or {}
+    port = data.get('port', 8000)
+
+    current_status = http_server.status()
+    if current_status['running']:
+        success, msg = http_server.stop()
+    else:
+        success, msg = http_server.start(port)
+
+    return jsonify({'success': success, 'msg': msg, 'details': http_server.status()})
+
+@app.route('/api/tools/http/status', methods=['GET'])
+def get_http_status():
+    return jsonify(http_server.status())
+
 
 # --- Workspace & Notes API ---
 @app.route('/api/workspaces', methods=['GET'])

