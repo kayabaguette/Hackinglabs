@@ -538,8 +538,8 @@ document.addEventListener('DOMContentLoaded', () => {
     // --- Split.js Initialization ---
     // Horizontal Split: Left Sidebar | Center | Right Tools
     Split(['#left-sidebar', '#center-panel', '#right-panel'], {
-        sizes: [15, 75, 10], // Minimize Right Panel
-        minSize: [150, 400, 200],
+        sizes: [15, 84, 1], // Minimize Right Panel
+        minSize: [150, 400, 180],
         gutterSize: 5,
         cursor: 'col-resize',
         onDragEnd: () => {
