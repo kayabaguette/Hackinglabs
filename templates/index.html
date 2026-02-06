@@ -113,13 +113,38 @@
 
             <!-- Target / Nmap -->
             <h6 class="text-secondary text-uppercase fw-bold mb-2" style="font-size: 0.7rem;">Target Scan</h6>
-            <div class="mb-2">
+                    <div class="mb-3">
                 <input type="text" class="form-control form-control-sm bg-dark text-light border-secondary mb-2" placeholder="Nmap Command" id="nmap-command" value="nmap -sC -sV " style="font-size: 0.75rem;">
                 <div class="d-grid gap-2">
                     <button class="btn btn-sm btn-danger py-0" type="button" id="btn-nmap-run" style="font-size: 0.75rem;">Run Scan</button>
                     <button class="btn btn-sm btn-outline-light py-0" type="button" id="btn-nmap-save" style="font-size: 0.75rem;">Save Output</button>
                 </div>
             </div>
+
+                    <!-- Netcat -->
+                    <h6 class="text-secondary text-uppercase fw-bold mb-2" style="font-size: 0.7rem;">Netcat Listener</h6>
+                    <div class="card bg-dark border-secondary mb-3">
+                        <div class="card-body p-2">
+                            <div class="input-group input-group-sm mb-2">
+                                <span class="input-group-text bg-secondary border-secondary text-light p-1" style="font-size: 0.7rem;">Port</span>
+                                <input type="number" class="form-control bg-black text-light border-secondary p-1" id="nc-port" value="4444" style="font-size: 0.75rem;">
+                            </div>
+                            <div class="d-grid">
+                                <button class="btn btn-sm btn-outline-warning py-0" id="btn-nc-listen" style="font-size: 0.75rem;">Start Listener (nc -lvnp)</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Ligolo-ng -->
+                    <h6 class="text-secondary text-uppercase fw-bold mb-2" style="font-size: 0.7rem;">Ligolo-ng</h6>
+                    <div class="card bg-dark border-secondary mb-2">
+                        <div class="card-body p-2">
+                            <div class="d-grid gap-2">
+                                <button class="btn btn-sm btn-outline-info py-0" id="btn-ligolo-proxy" style="font-size: 0.75rem;">Start Proxy (Sudo)</button>
+                                <button class="btn btn-sm btn-outline-light py-0" id="btn-ligolo-agent" style="font-size: 0.75rem;">Connect Agent</button>
+                            </div>
+                        </div>
+                    </div>
         </div>
     </div>
 </div>

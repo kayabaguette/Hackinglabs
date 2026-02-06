@@ -467,6 +467,40 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
 
+    // Netcat Listener
+    document.getElementById('btn-nc-listen').addEventListener('click', () => {
+        const port = document.getElementById('nc-port').value;
+        if(port && activeTermId && terminals[activeTermId]) {
+             terminals[activeTermId].term.write(`\r\n\x1b[33m[System] Starting Netcat Listener on ${port}...\x1b[0m\r\n`);
+             socket.emit('input', { term_id: activeTermId, input: `nc -lvnp ${port}\n` });
+        } else {
+            alert('Ensure a port is set and terminal is active.');
+        }
+    });
+
+    // Ligolo-ng Proxy
+    document.getElementById('btn-ligolo-proxy').addEventListener('click', () => {
+        if(activeTermId && terminals[activeTermId]) {
+             terminals[activeTermId].term.write(`\r\n\x1b[36m[System] Starting Ligolo Proxy...\x1b[0m\r\n`);
+             socket.emit('input', { term_id: activeTermId, input: `sudo ligolo-proxy -selfcert\n` });
+        } else {
+            alert('Ensure a terminal is active.');
+        }
+    });
+
+    // Ligolo-ng Agent Connect
+    document.getElementById('btn-ligolo-agent').addEventListener('click', () => {
+        if(activeTermId && terminals[activeTermId]) {
+             const server = prompt("Ligolo Proxy Server (IP:Port):", "127.0.0.1:11601");
+             if(server) {
+                 terminals[activeTermId].term.write(`\r\n\x1b[36m[System] Connecting Ligolo Agent to ${server}...\x1b[0m\r\n`);
+                 socket.emit('input', { term_id: activeTermId, input: `./agent -connect ${server} -ignore-cert\n` });
+             }
+        } else {
+            alert('Ensure a terminal is active.');
+        }
+    });
+
     // Quick SSH
     document.getElementById('btn-quick-ssh').addEventListener('click', () => {
         const target = document.getElementById('ssh-target').value;
