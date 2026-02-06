@@ -362,8 +362,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- Socket Events ---
     socket.on('connect', () => {
-        document.getElementById('connection-status').className = 'badge bg-success';
-        document.getElementById('connection-status').innerText = 'Connected';
+        const socketStatus = document.getElementById('socket-status');
+        if (socketStatus) {
+            socketStatus.className = 'badge bg-success border border-success p-1';
+            socketStatus.title = 'Connected';
+        }
 
         loadWorkspaces();
 
@@ -408,8 +411,11 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     socket.on('disconnect', () => {
-        document.getElementById('connection-status').className = 'badge bg-danger';
-        document.getElementById('connection-status').innerText = 'Disconnected';
+        const socketStatus = document.getElementById('socket-status');
+        if (socketStatus) {
+            socketStatus.className = 'badge bg-danger border border-danger p-1';
+            socketStatus.title = 'Disconnected';
+        }
     });
 
     window.addEventListener('resize', () => {
