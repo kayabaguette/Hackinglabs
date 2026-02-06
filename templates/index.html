@@ -14,24 +14,25 @@
     <div class="d-flex flex-grow-1 overflow-hidden" id="main-split-pane">
 
         <!-- Left Panel: Terminals (Flexible width) -->
-        <div id="left-panel" class="bg-dark position-relative d-flex flex-column">
+        <div id="left-panel" class="bg-dark position-relative d-flex flex-row">
+
+            <!-- Terminal Tabs Sidebar -->
+            <div id="terminal-tabs-sidebar" class="bg-black border-end border-secondary p-2 d-flex flex-column small-font" style="width: 200px; min-width: 150px;">
+                 <h6 class="text-secondary text-uppercase fw-bold mb-2" style="font-size: 0.7rem;">Active Sessions</h6>
+                 <div class="list-group list-group-flush mb-3 flex-shrink-0" id="session-list" style="overflow-y: auto; flex-grow: 1;">
+                     <!-- Tabs injected here -->
+                 </div>
+                 <button class="btn btn-sm btn-success w-100 mb-2 py-0" id="btn-new-term" style="font-size: 0.75rem;">+ New Terminal</button>
+            </div>
+
              <!-- Terminal Area -->
-            <div id="terminals-wrapper" class="flex-grow-1 w-100 position-relative">
+            <div id="terminals-wrapper" class="flex-grow-1 position-relative" style="min-width: 0;">
                 <!-- Terminals injected here -->
             </div>
         </div>
 
         <!-- Right Panel: Tools (Fixed/Resizable width) -->
         <div id="right-panel" class="bg-black border-start border-secondary p-2 d-flex flex-column small-font">
-
-             <!-- Active Terminals List (Moved here as it's a control) -->
-             <h6 class="text-secondary text-uppercase fw-bold mb-2" style="font-size: 0.7rem;">Active Sessions</h6>
-             <div class="list-group list-group-flush mb-3 flex-shrink-0" id="session-list" style="max-height: 150px; overflow-y: auto;">
-                 <!-- Tabs injected here -->
-             </div>
-             <button class="btn btn-sm btn-success w-100 mb-3 py-0" id="btn-new-term" style="font-size: 0.75rem;">+ New Terminal</button>
-
-            <hr class="border-secondary my-2">
 
             <!-- Quick SSH -->
             <h6 class="text-secondary text-uppercase fw-bold mb-2" style="font-size: 0.7rem;">Quick SSH</h6>
