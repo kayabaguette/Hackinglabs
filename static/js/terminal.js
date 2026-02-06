@@ -4,8 +4,128 @@ document.addEventListener('DOMContentLoaded', () => {
     let activeTermId = null;
     let termCounter = 0;
 
+    // Workspace State
+    let currentWorkspaceId = localStorage.getItem('currentWorkspaceId');
+    let currentNoteId = null;
+
     const sessionList = document.getElementById('session-list');
     const terminalsWrapper = document.getElementById('terminals-wrapper');
+
+    // --- Workspace & Notes Logic ---
+    function loadWorkspaces() {
+        const select = document.getElementById('workspace-select');
+        fetch('/api/workspaces')
+            .then(r => r.json())
+            .then(data => {
+                select.innerHTML = '';
+                if (data.length === 0) {
+                     const opt = document.createElement('option');
+                     opt.text = "No Workspaces";
+                     select.add(opt);
+                }
+                data.forEach(w => {
+                    const opt = document.createElement('option');
+                    opt.value = w.id;
+                    opt.text = w.name;
+                    select.add(opt);
+
+                    if (currentWorkspaceId && parseInt(currentWorkspaceId) === w.id) {
+                        select.value = w.id;
+                    }
+                });
+
+                if (!currentWorkspaceId && data.length > 0) {
+                    select.value = data[0].id;
+                    currentWorkspaceId = data[0].id;
+                    localStorage.setItem('currentWorkspaceId', currentWorkspaceId);
+                }
+
+                if (currentWorkspaceId) loadNotes();
+            });
+    }
+
+    document.getElementById('workspace-select').addEventListener('change', (e) => {
+        currentWorkspaceId = e.target.value;
+        localStorage.setItem('currentWorkspaceId', currentWorkspaceId);
+        loadNotes();
+    });
+
+    document.getElementById('btn-create-workspace').addEventListener('click', () => {
+        const name = prompt("New Workspace Name:");
+        if (name) {
+            fetch('/api/workspaces', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({name: name})
+            })
+            .then(r => r.json())
+            .then(data => {
+                currentWorkspaceId = data.id;
+                localStorage.setItem('currentWorkspaceId', currentWorkspaceId);
+                loadWorkspaces();
+            });
+        }
+    });
+
+    function loadNotes() {
+        if (!currentWorkspaceId) return;
+        fetch(`/api/workspaces/${currentWorkspaceId}/notes`)
+            .then(r => r.json())
+            .then(notes => {
+                const list = document.getElementById('notes-list');
+                list.innerHTML = '';
+                notes.forEach(n => {
+                    const item = document.createElement('button');
+                    item.className = 'list-group-item list-group-item-action bg-black text-light border-secondary small-font p-1';
+                    item.innerText = n.title;
+                    item.onclick = () => openNote(n);
+                    list.appendChild(item);
+                });
+            });
+    }
+
+    function openNote(note) {
+        currentNoteId = note.id;
+        document.getElementById('note-title').value = note.title;
+        document.getElementById('note-content').value = note.content || '';
+        document.getElementById('note-editor').style.display = 'flex';
+    }
+
+    document.getElementById('btn-new-note').addEventListener('click', () => {
+        if (!currentWorkspaceId) {
+             alert("Select a workspace first");
+             return;
+        }
+        const title = prompt("Note Title:");
+        if (title) {
+            fetch(`/api/workspaces/${currentWorkspaceId}/notes`, {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({title: title})
+            })
+            .then(r => r.json())
+            .then(note => {
+                loadNotes();
+                openNote(note);
+            });
+        }
+    });
+
+    document.getElementById('btn-save-note').addEventListener('click', () => {
+        if (currentNoteId) {
+            const title = document.getElementById('note-title').value;
+            const content = document.getElementById('note-content').value;
+            fetch(`/api/notes/${currentNoteId}`, {
+                method: 'PUT',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({title: title, content: content})
+            })
+            .then(r => r.json())
+            .then(() => {
+                loadNotes(); // Refresh title if changed
+            });
+        }
+    });
 
     // --- Helpers ---
     function updateWebDAVUI(statusData) {
@@ -90,6 +210,20 @@ document.addEventListener('DOMContentLoaded', () => {
             if(newName) label.innerText = newName;
         });
 
+        // Controls container
+        const controls = document.createElement('div');
+
+        // Archive button
+        const archiveBtn = document.createElement('i');
+        archiveBtn.className = 'bi bi-save text-secondary me-2';
+        archiveBtn.style.fontSize = '0.8rem';
+        archiveBtn.title = 'Archive Terminal';
+        archiveBtn.onclick = (e) => {
+             e.stopPropagation();
+             archiveTerminal(termId);
+        };
+        controls.appendChild(archiveBtn);
+
         // Close button
         const closeBtn = document.createElement('i');
         closeBtn.className = 'bi bi-x-lg text-secondary';
@@ -100,7 +234,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 closeTerminal(termId);
             }
         };
-        tab.appendChild(closeBtn);
+        controls.appendChild(closeBtn);
+
+        tab.appendChild(controls);
 
         tab.onclick = () => setActiveTerminal(termId);
         sessionList.appendChild(tab);
@@ -189,10 +325,32 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
+    function archiveTerminal(termId) {
+        if (!currentWorkspaceId) {
+            alert('Select a workspace first');
+            return;
+        }
+        fetch(`/api/terminals/${termId}/archive`, {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({socket_id: socket.id, workspace_id: currentWorkspaceId})
+        })
+        .then(r => r.json())
+        .then(data => {
+            if (data.status === 'archived') {
+                alert(`Terminal archived (ID: ${data.id})`);
+            } else {
+                alert('Error archiving: ' + data.error);
+            }
+        });
+    }
+
     // --- Socket Events ---
     socket.on('connect', () => {
         document.getElementById('connection-status').className = 'badge bg-success';
         document.getElementById('connection-status').innerText = 'Connected';
+
+        loadWorkspaces();
 
         if (Object.keys(terminals).length === 0) {
             createTerminal('default');
@@ -274,8 +432,31 @@ document.addEventListener('DOMContentLoaded', () => {
         const cmd = document.getElementById('nmap-command').value;
         if(cmd && activeTermId && terminals[activeTermId]) {
              terminals[activeTermId].term.write(`\r\n\x1b[32m[System] Running: ${cmd}\x1b[0m\r\n`);
-             socket.emit('input', { term_id: activeTermId, input: `${cmd}\n` });
+             // Pipe to tee for saving
+             const fullCmd = `${cmd} | tee /tmp/nmap_scan.txt\n`;
+             socket.emit('input', { term_id: activeTermId, input: fullCmd });
         }
+    });
+
+    document.getElementById('btn-nmap-save').addEventListener('click', () => {
+        if (!currentWorkspaceId) {
+             alert("Select a workspace first");
+             return;
+        }
+        fetch('/api/tools/nmap/save', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({workspace_id: currentWorkspaceId})
+        })
+        .then(r => r.json())
+        .then(data => {
+             if (data.status === 'saved') {
+                 loadNotes();
+                 alert('Scan saved as note');
+             } else {
+                 alert('Error saving scan: ' + (data.error || 'Unknown'));
+             }
+        });
     });
 
     // Quick SSH
