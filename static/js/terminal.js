@@ -306,7 +306,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // Archive button
         const archiveBtn = document.createElement('i');
-        archiveBtn.className = 'bi bi-save text-secondary me-2';
+        archiveBtn.className = 'bi bi-save text-light me-2';
         archiveBtn.style.fontSize = '0.8rem';
         archiveBtn.title = 'Archive Terminal';
         archiveBtn.onclick = (e) => {
@@ -317,7 +317,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // Close button
         const closeBtn = document.createElement('i');
-        closeBtn.className = 'bi bi-x-lg text-secondary';
+        closeBtn.className = 'bi bi-x-lg text-light';
         closeBtn.style.fontSize = '0.8rem';
         closeBtn.onclick = (e) => {
             e.stopPropagation();
