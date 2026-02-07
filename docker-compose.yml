@@ -1,8 +1,12 @@
 version: '3.8'
 
+# Usage: docker-compose up --build
+# Add --build to force a rebuild of the image with the latest source code.
+
 services:
   ctf-ops-center:
     build: .
+    image: ctf-ops-center:latest
     container_name: ctf-ops-center
     restart: unless-stopped
     ports:
