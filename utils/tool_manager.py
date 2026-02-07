@@ -71,8 +71,11 @@ class ToolManager:
         }
 
     def list_vpn_configs(self):
-        # List all .ovpn files in current directory
-        return [f for f in glob.glob("*.ovpn")]
+        # List all .ovpn files in current directory and vpn/ subdirectory
+        files = []
+        files.extend(glob.glob("*.ovpn"))
+        files.extend(glob.glob("vpn/*.ovpn"))
+        return files
 
     def get_vpn_status(self):
         # Check if openvpn process is running
