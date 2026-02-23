@@ -1,11 +1,9 @@
 import pty
 import os
 import subprocess
-import select
 import struct
 import fcntl
 import termios
-import logging
 
 class PTYManager:
     def __init__(self):
