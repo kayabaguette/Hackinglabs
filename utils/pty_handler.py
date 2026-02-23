@@ -9,7 +9,7 @@ import logging
 
 class PTYManager:
     def __init__(self):
-        # Key: (sid, term_id) -> {fd, process}
+        # Key: (sid, term_id) -> {fd, process, history: []}
         self.sessions = {}
 
     def spawn(self, sid, term_id, cmd=None):
@@ -38,7 +38,7 @@ class PTYManager:
         )
         os.close(slave_fd) # Close slave in parent
 
-        self.sessions[key] = {"fd": master_fd, "process": p}
+        self.sessions[key] = {"fd": master_fd, "process": p, "history": []}
         return master_fd
 
     def write(self, sid, term_id, data):
@@ -86,3 +86,19 @@ class PTYManager:
             pass
         if key in self.sessions:
             del self.sessions[key]
+
+    def append_history(self, sid, term_id, data):
+        key = (sid, term_id)
+        if key in self.sessions:
+            try:
+                if isinstance(data, bytes):
+                    data = data.decode('utf-8', errors='replace')
+                self.sessions[key]["history"].append(data)
+            except:
+                pass
+
+    def get_history(self, sid, term_id):
+        key = (sid, term_id)
+        if key in self.sessions:
+            return "".join(self.sessions[key]["history"])
+        return ""

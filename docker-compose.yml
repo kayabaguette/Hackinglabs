@@ -1,0 +1,33 @@
+version: '3.8'
+
+# Usage: docker-compose up --build
+# Add --build to force a rebuild of the image with the latest source code.
+
+services:
+  ctf-ops-center:
+    build: .
+    image: ctf-ops-center:latest
+    container_name: ctf-ops-center
+    restart: unless-stopped
+    ports:
+      - "5000:5000"
+      - "8000-8100:8000-8100" # File servers / HTTP ports
+      - "4444:4444" # Default Netcat
+      - "11601:11601" # Ligolo-ng proxy
+    volumes:
+      - ./shared:/app/shared:rw
+      - ./instance:/app/instance:rw
+      - ./ctf_ops.db:/app/ctf_ops.db:rw
+      - ./vpn:/app/vpn:ro # Mount VPN configs directory
+    environment:
+      - SECRET_KEY=${SECRET_KEY}
+    cap_add:
+      - NET_ADMIN # Required for OpenVPN and Tun/Tap
+    devices:
+      - /dev/net/tun:/dev/net/tun # Required for OpenVPN
+    networks:
+      - ctf_net
+
+networks:
+  ctf_net:
+    driver: bridge

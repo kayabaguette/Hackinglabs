@@ -1,13 +1,17 @@
 import threading
+import subprocess
 from wsgidav.wsgidav_app import WsgiDAVApp
 from cheroot import wsgi
 import os
+import glob
 
 class ToolManager:
     def __init__(self):
         self.webdav_server = None
         self.webdav_thread = None
         self.webdav_running = False
+        self.webdav_port = 8080
+        self.webdav_path = None
 
     def toggle_webdav(self, root_path=None, port=8080):
         if root_path is None:
@@ -50,11 +54,36 @@ class ToolManager:
         self.webdav_thread = threading.Thread(target=run_server, daemon=True)
         self.webdav_thread.start()
         self.webdav_running = True
+        self.webdav_port = port
+        self.webdav_path = root_path
 
     def stop_webdav(self):
         if self.webdav_server:
             self.webdav_server.stop()
             self.webdav_server = None
         self.webdav_running = False
+
+    def get_webdav_status(self):
+        return {
+            "running": self.webdav_running,
+            "port": self.webdav_port,
+            "path": self.webdav_path or "N/A"
+        }
+
+    def list_vpn_configs(self):
+        # List all .ovpn files in current directory and vpn/ subdirectory
+        files = []
+        files.extend(glob.glob("*.ovpn"))
+        files.extend(glob.glob("vpn/*.ovpn"))
+        return files
+
+    def get_vpn_status(self):
+        # Check if openvpn process is running
+        try:
+            # pgrep returns 0 if process found, 1 if not
+            ret = subprocess.call(["pgrep", "openvpn"], stdout=subprocess.DEVNULL)
+            return ret == 0
+        except Exception:
+            return False
 
 tool_manager = ToolManager()
