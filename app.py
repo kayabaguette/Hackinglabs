@@ -1,9 +1,9 @@
 import eventlet
-import os
-import select
-
 # Patch standard library for async operations
 eventlet.monkey_patch()
+
+import os
+import select
 
 from flask import Flask, render_template, request, jsonify
 from flask_socketio import SocketIO, emit, disconnect
