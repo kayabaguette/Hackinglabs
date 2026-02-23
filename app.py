@@ -240,7 +240,7 @@ def read_from_ptys():
                 if key:
                     sid, term_id = key
                     try:
-                        data = os.read(fd, 1024)
+                        data = os.read(fd, 8192)
                         if data:
                             decoded_data = data.decode('utf-8', errors='replace')
                             # Append to history for archiving
