@@ -814,7 +814,8 @@ document.addEventListener('DOMContentLoaded', () => {
     // Ligolo-ng Agent Connect
     document.getElementById('btn-ligolo-agent').addEventListener('click', () => {
         if(activeTermId && terminals[activeTermId]) {
-             const server = prompt("Ligolo Proxy Server (IP:Port):", "127.0.0.1:11601");
+             const vars = getVars();
+             const server = prompt("Ligolo Proxy Server (IP:Port):", `${vars.LHOST}:11601`);
              if(server) {
                  terminals[activeTermId].term.write(`\r\n\x1b[36m[System] Connecting Ligolo Agent to ${server}...\x1b[0m\r\n`);
                  socket.emit('input', { term_id: activeTermId, input: `./agent -connect ${server} -ignore-cert\n` });
